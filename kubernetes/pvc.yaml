@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mongodb-pvc
+  namespace: Task Manager
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: "standard" # Replace with your cluster's storage class
+  resources:
+    requests:
+      storage: 10Gi
