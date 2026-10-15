@@ -2,12 +2,12 @@ apiVersion: v1
 kind: Service
 metadata:
   name: backend-service
-  namespace: Task Manager
+  namespace: task-manager
 spec:
-  type: ClusterIP            # Default type (can be omitted)
+  type: ClusterIP
   selector:
-    app: backend         # Matches the Pod label from the deployment above
+    app: backend             # matches the pod label in deployment-backend.yaml
   ports:
     - protocol: TCP
-      port: 8000        # Port exposed INSIDE the cluster (e.g., http://backend-service:8000
-      targetPort: 8000  
+      port: 8000             # port inside the cluster (http://backend-service:8000)
+      targetPort: 8000

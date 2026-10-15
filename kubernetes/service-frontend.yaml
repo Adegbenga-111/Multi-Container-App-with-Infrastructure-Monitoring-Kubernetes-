@@ -2,12 +2,12 @@ apiVersion: v1
 kind: Service
 metadata:
   name: frontend-service
-  namespace: Task Manager
+  namespace: task-manager
 spec:
-  type: ClusterIP            # Default type (can be omitted)
+  type: ClusterIP
   selector:
-    app: frontend         # Matches the Pod label from the deployment above
+    app: frontend            # matches the pod label in deployment-frontend.yaml
   ports:
     - protocol: TCP
-      port: 80          # Port exposed INSIDE the cluster (e.g., http://frontend-service:80)
-      targetPort: 8080  
+      port: 80               # port inside the cluster
+      targetPort: 8080       # port Nginx listens on in the container

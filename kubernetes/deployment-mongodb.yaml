@@ -2,9 +2,11 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: deployment-mongodb
-  namespace: task-manager # Kubernetes namespaces cannot have spaces; changed to lowercase with a hyphen
+  namespace: task-manager
 spec:
-  replicas: 1 # Must remain 1 because ReadWriteOnce storage cannot be shared
+  replicas: 1                # Must stay 1 because ReadWriteOnce storage cannot be shared
+  strategy:
+    type: Recreate           # Stop the old pod before starting a new one, so two pods never share the volume
   selector:
     matchLabels:
       app: mongodb
@@ -14,42 +16,43 @@ spec:
         app: mongodb
     spec:
       containers:
-      - name: mongodb
-        image: mongo:7.0
-        ports:
-        - containerPort: 27017
-        env:
-        - name: MONGO_INITDB_ROOT_USERNAME
-          valueFrom:
-            secretKeyRef:
-              name: mongodb-secret
-              key: MONGO_ROOT_USERNAME
-        - name: MONGO_INITDB_ROOT_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: mongodb-secret
-              key: MONGO_ROOT_PASSWORD
-        volumeMounts:
-        - name: data
-          mountPath: /data/db
-        # Probes replace the Compose 'healthcheck'. A TCP check is light enough for a slow host.
-        readinessProbe:               # "ready for traffic?" (Service only sends traffic when this passes)
-          tcpSocket:
-            port: 27017
-          initialDelaySeconds: 20
-          periodSeconds: 10
-          failureThreshold: 12
-        livenessProbe:                # "still alive?" (the container is restarted if this keeps failing)
-          tcpSocket:
-            port: 27017
-          initialDelaySeconds: 90
-          periodSeconds: 20
-          failureThreshold: 6
-        resources:
-          requests:
-            memory: 256Mi
-            cpu: 100m
+        - name: mongodb
+          image: mongo:7.0
+          ports:
+            - containerPort: 27017
+          env:
+            # Key names must match the keys in secret.yaml exactly.
+            - name: MONGO_INITDB_ROOT_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: mongodb-secret
+                  key: mongo-root-username
+            - name: MONGO_INITDB_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mongodb-secret
+                  key: mongo-root-password
+          volumeMounts:
+            - name: data
+              mountPath: /data/db
+          # Probes replace the Compose 'healthcheck'. A TCP check is light enough for a slow host.
+          readinessProbe:            # ready for traffic?
+            tcpSocket:
+              port: 27017
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            failureThreshold: 12
+          livenessProbe:             # still alive? (container restarts if this keeps failing)
+            tcpSocket:
+              port: 27017
+            initialDelaySeconds: 90
+            periodSeconds: 20
+            failureThreshold: 6
+          resources:
+            requests:
+              memory: 256Mi
+              cpu: 100m
       volumes:
-      - name: data
-        persistentVolumeClaim:
-          claimName: mongo-data
+        - name: data
+          persistentVolumeClaim:
+            claimName: mongodb-pvc   # must match the PVC name in pvc.yaml

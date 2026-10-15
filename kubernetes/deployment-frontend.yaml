@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: frontend
-  namespace: "Task Manager"
+  namespace: task-manager
   labels:
     app: frontend
 spec:
@@ -22,7 +22,10 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: kube-frontend:latest 
+          # REACT_APP_API_URL is baked into this image when it is built.
+          # Behind the Ingress, build it with REACT_APP_API_URL=http://localhost
+          image: kube-frontend:latest
+          imagePullPolicy: IfNotPresent   # use the local image instead of pulling from Docker Hub
           ports:
             - containerPort: 8080
               protocol: TCP

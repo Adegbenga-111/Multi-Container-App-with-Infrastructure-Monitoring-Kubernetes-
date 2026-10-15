@@ -2,11 +2,13 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: mongodb-pvc
-  namespace: Task Manager
+  namespace: task-manager
 spec:
   accessModes:
     - ReadWriteOnce
-  storageClassName: "standard" # Replace with your cluster's storage class
+  # storageClassName removed so the cluster's DEFAULT storage class is used.
+  # 'standard' only exists on kind/minikube. Docker Desktop uses 'hostpath'.
+  # Check yours with: kubectl get storageclass
   resources:
     requests:
       storage: 10Gi

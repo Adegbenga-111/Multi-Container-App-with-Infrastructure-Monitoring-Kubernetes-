@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: backend
-  namespace: "Task-Manager"
+  namespace: task-manager
   labels:
     app: backend
 spec:
@@ -23,26 +23,46 @@ spec:
       containers:
         - name: backend
           image: kube-backend:latest
+          # ':latest' defaults to 'Always' (pull from Docker Hub), which fails for a local image.
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8000
               protocol: TCP
           env:
-            - name: MONGO_URI
+            - name: MONGO_ROOT_USERNAME
               valueFrom:
                 secretKeyRef:
                   name: mongodb-secret
                   key: mongo-root-username
-          readinessProbe:
+            - name: MONGO_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mongodb-secret
+                  key: mongo-root-password
+            # Built from the two variables above (they must be defined first).
+            # 'mongodb-service' is the Service name in service-mongo.yaml.
+            # Special characters in the password must be URL-encoded.
+            - name: MONGO_URI
+              value: "mongodb://$(MONGO_ROOT_USERNAME):$(MONGO_ROOT_PASSWORD)@mongodb-service:27017/task_manager?authSource=admin"
+            - name: DATABASE_NAME
+              value: task_manager
+          readinessProbe:            # ready only when the API can reach MongoDB
             httpGet:
-              path: /
+              path: /health
               port: 8000
-          livenessProbe:
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+          livenessProbe:             # restart only if the process stops answering
             httpGet:
-              path: /
+              path: /health/live
               port: 8000
-            initialDelaySeconds: 15
-            periodSeconds: 20
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 5
           resources:
             requests:
-              memory: 32Mi
-              cpu: 25m
+              memory: 128Mi
+              cpu: 100m

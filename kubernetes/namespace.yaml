@@ -1,6 +1,7 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: Task Manager
+  # Namespace names must be lowercase letters, numbers and hyphens (no spaces, no capitals).
+  name: task-manager
   labels:
-    name: Task Manager
+    name: task-manager

@@ -2,26 +2,28 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: main-ingress
-  annotations:
-    # Custom configurations for your specific controller type
-    nginx.ingress.kubernetes.io/rewrite-target: /
+  namespace: task-manager    # must be the same namespace as the Services it points to
+  # No rewrite-target annotation: the backend routes already start with /api,
+  # so rewriting the path to '/' would break every API call.
 spec:
-  ingressClassName: nginx # Identifies which controller should implement these rules
+  ingressClassName: nginx    # requires the ingress-nginx controller to be installed
   rules:
-  - host: myapp.com
-    http:
-      paths:
-      - path: /api
-        pathType: Prefix
-        backend:
-          service:
-            name: backend-service
-            port:
-              number: 8080
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: frontend-service
-            port:
-              number: 80
+    # No 'host:' so it answers on http://localhost.
+    # To use a name like myapp.com, add "127.0.0.1 myapp.com" to
+    # C:\Windows\System32\drivers\etc\hosts and build the frontend with that URL.
+    - http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: backend-service
+                port:
+                  number: 8000      # must match the port in service-backend.yaml
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend-service
+                port:
+                  number: 80
