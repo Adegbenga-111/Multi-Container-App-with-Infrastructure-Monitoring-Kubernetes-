@@ -24,7 +24,7 @@ spec:
         - name: frontend
           # REACT_APP_API_URL is baked into this image when it is built.
           # Behind the Ingress, build it with REACT_APP_API_URL=http://localhost
-          image: kube-frontend:latest
+          image: kube-frontend:k8s
           imagePullPolicy: IfNotPresent   # use the local image instead of pulling from Docker Hub
           ports:
             - containerPort: 8080
