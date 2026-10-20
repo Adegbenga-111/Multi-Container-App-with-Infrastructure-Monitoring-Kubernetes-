@@ -8,6 +8,7 @@ spec:
   selector:
     app: backend             # matches the pod label in deployment-backend.yaml
   ports:
-    - protocol: TCP
+    - name: http                # a NAME is required for ServiceMonitor to select the port
+      protocol: TCP
       port: 8000             # port inside the cluster (http://backend-service:8000)
       targetPort: 8000
