@@ -505,7 +505,7 @@ flowchart TB
 
 ### Architecture diagram
 
-![Kubernetes monitoring stack architecture](docs/images/kubernetes-monitoring-stack-architecture.png)
+![Kubernetes monitoring stack architecture](https://github.com/Adegbenga-111/Multi-Container-App-with-Infrastructure-Monitoring-Kubernetes-/blob/main/Kubernetes%20Monitoring%20Stack%20Architecture.png)
 
 ### Steps
 
