@@ -1,0 +1,36 @@
+# Ingress for Grafana and Prometheus.
+# It must be in the 'monitoring' namespace, because an Ingress can only point to Services
+# in its own namespace (grafana and prometheus-server live in 'monitoring').
+# Uses host names instead of /grafana and /prometheus paths, so neither app needs sub-path settings.
+# Browsers resolve *.localhost to 127.0.0.1 automatically. If yours does not, add to
+# C:\Windows\System32\drivers\etc\hosts:
+#   127.0.0.1 grafana.localhost prometheus.localhost
+# Prometheus has NO login. Only use this on your own machine, never on a public server.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: monitoring-ingress
+  namespace: monitoring
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: grafana.localhost
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: grafana              # Service created by the Grafana release
+                port:
+                  number: 80               # the Service port (not the 3001 used for port-forward)
+    - host: prometheus.localhost
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: prometheus-server    # Service created by the Prometheus release
+                port:
+                  number: 80               # the Service port (not 9090)

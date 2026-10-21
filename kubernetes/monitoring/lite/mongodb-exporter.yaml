@@ -1,5 +1,6 @@
 # MongoDB has no /metrics endpoint, so this exporter connects to the database and exposes
-# its statistics for Prometheus. Three resources: Deployment, Service, ServiceMonitor.
+# its statistics on port 9216. The Prometheus job 'mongodb' in prometheus-values.yaml scrapes it.
+# No ServiceMonitor here: the lightweight setup has no Prometheus Operator.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -25,7 +26,7 @@ spec:
             # $(VAR) is replaced with the env values defined below.
             # 'mongodb-service' is the MongoDB Service name in service-mongo.yaml.
             - --mongodb.uri=mongodb://$(MONGO_ROOT_USERNAME):$(MONGO_ROOT_PASSWORD)@mongodb-service:27017/admin
-            - --collect-all      # heaviest option. Remove it on a low-memory host to keep the basics only.
+            - --collect-all      # remove this line to collect only the basics and use less memory
           env:
             - name: MONGO_ROOT_USERNAME
               valueFrom:
@@ -49,35 +50,20 @@ spec:
             requests:
               memory: 32Mi
               cpu: 25m
+            limits:
+              memory: 128Mi
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: mongodb-exporter
+  name: mongodb-exporter       # the Prometheus job targets mongodb-exporter.task-manager.svc.cluster.local:9216
   namespace: task-manager
   labels:
-    app: mongodb-exporter      # the ServiceMonitor selects on this label
+    app: mongodb-exporter
 spec:
   selector:
     app: mongodb-exporter
   ports:
-    - name: metrics            # the ServiceMonitor refers to this port name
+    - name: metrics
       port: 9216
       targetPort: 9216
----
-apiVersion: monitoring.coreos.com/v1
-kind: ServiceMonitor
-metadata:
-  name: mongodb-exporter
-  namespace: task-manager
-spec:
-  selector:
-    matchLabels:
-      app: mongodb-exporter
-  namespaceSelector:
-    matchNames:
-      - task-manager
-  endpoints:
-    - port: metrics
-      interval: 30s
-      scrapeTimeout: 20s

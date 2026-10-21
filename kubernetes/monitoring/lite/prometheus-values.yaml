@@ -1,0 +1,89 @@
+# =========================================================================
+# Lightweight Prometheus (plain prometheus-community/prometheus chart)
+# No operator and no CRDs, so it fits on a small machine.
+# Install:
+#   helm install prometheus prometheus-community/prometheus \
+#     -n monitoring --create-namespace -f kubernetes/monitoring/lite/prometheus-values.yaml
+# Apply later changes with:
+#   helm upgrade prometheus prometheus-community/prometheus \
+#     -n monitoring -f kubernetes/monitoring/lite/prometheus-values.yaml
+# The Service will be called 'prometheus-server' (release name + '-server').
+# =========================================================================
+
+# Things this setup does not need (each one saves memory).
+alertmanager:
+  enabled: false
+prometheus-node-exporter:
+  enabled: false
+prometheus-pushgateway:
+  enabled: false
+
+# Turned off: it restarted repeatedly on this small cluster and added load on the API server.
+# You lose pod/deployment status metrics. Container CPU and memory come from cAdvisor below.
+kube-state-metrics:
+  enabled: false
+
+server:
+  global:
+    scrape_interval: 30s
+    scrape_timeout: 20s
+  retention: 3d
+  persistentVolume:
+    enabled: false          # data is lost when the pod restarts, but no PVC is needed
+  resources:
+    requests:
+      memory: 200Mi
+      cpu: 100m
+    limits:
+      memory: 768Mi         # protects the other pods if Prometheus grows
+
+# Replaces the chart's DEFAULT scrape jobs with a short list (a list in Helm values is replaced,
+# not merged). This removes the 'kubernetes-api-servers' job, which timed out on this cluster,
+# and the other default Kubernetes jobs we do not need.
+# Before applying, compare with the defaults:  helm show values prometheus-community/prometheus
+serverFiles:
+  prometheus.yml:
+    scrape_configs:
+      - job_name: prometheus
+        static_configs:
+          - targets: ['localhost:9090']
+
+      # Container CPU and memory per pod, read from each node's kubelet through the API server.
+      - job_name: kubernetes-nodes-cadvisor
+        scrape_interval: 60s
+        scrape_timeout: 50s
+        scheme: https
+        tls_config:
+          ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+        bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+        kubernetes_sd_configs:
+          - role: node
+        relabel_configs:
+          - action: labelmap
+            regex: __meta_kubernetes_node_label_(.+)
+          - target_label: __address__
+            replacement: kubernetes.default.svc:443
+          - source_labels: [__meta_kubernetes_node_name]
+            regex: (.+)
+            target_label: __metrics_path__
+            replacement: /api/v1/nodes/$1/proxy/metrics/cadvisor
+# grafana-values.yaml
+grafana.ini:
+  server:
+    root_url: "%(protocol)s://%(domain)s/grafana/"
+    serve_from_sub_path: true
+
+# Your own jobs (same format as the prometheus.yml you used with Docker Compose).
+extraScrapeConfigs: |
+  - job_name: backend
+    metrics_path: /metrics
+    scrape_interval: 30s
+    scrape_timeout: 20s
+    static_configs:
+      - targets: ['backend-service.task-manager.svc.cluster.local:8000']
+
+  - job_name: mongodb
+    scrape_interval: 30s
+    scrape_timeout: 20s
+    static_configs:
+      - targets: ['mongodb-exporter.task-manager.svc.cluster.local:9216']

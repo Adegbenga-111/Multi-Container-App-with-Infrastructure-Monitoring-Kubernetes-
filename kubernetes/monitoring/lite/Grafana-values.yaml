@@ -1,0 +1,38 @@
+# =========================================================================
+# Lightweight Grafana (community chart, successor of the deprecated grafana/grafana chart)
+# Install:
+#   helm install grafana grafana-community/grafana \
+#     -n monitoring -f kubernetes/monitoring/lite/grafana-values.yaml
+# Check the keys against your chart version with:  helm show values grafana-community/grafana
+# =========================================================================
+
+# Change this. Do not commit a real password to Git.
+adminPassword: change-me-grafana
+
+# Tells Grafana which address users open it on, so login redirects and links are correct.
+# Matches the host in ingress-monitoring.yaml. Use http://localhost:3001/ if you use port-forward.
+grafana.ini:
+  server:
+    root_url: http://grafana.localhost/
+
+persistence:
+  enabled: false            # dashboards you create are lost if the pod is recreated
+
+# Prometheus is added as a data source automatically.
+# 'prometheus-server' in namespace 'monitoring' is the Service created by the Prometheus release.
+datasources:
+  datasources.yaml:
+    apiVersion: 1
+    datasources:
+      - name: Prometheus
+        type: prometheus
+        access: proxy
+        url: http://prometheus-server.monitoring.svc.cluster.local
+        isDefault: true
+
+resources:
+  requests:
+    memory: 128Mi
+    cpu: 50m
+  limits:
+    memory: 256Mi
