@@ -224,13 +224,10 @@ kube/
 │   ├── ingress.yaml
 │   └── monitoring/
 │       ├── lite/                    (used on a low-memory machine)
-│       │   ├── prometheus-values.yaml
-│       │   ├── grafana-values.yaml
-│       │   └── mongodb-exporter.yaml
-│       └── full-stack/              (kube-prometheus-stack, needs more RAM)
-│           ├── values.yaml
-│           ├── servicemonitor-backend.yaml
+│           ├── prometheus-values.yaml
+│           ├── grafana-values.yaml
 │           └── mongodb-exporter.yaml
+│       
 │
 ├── prometheus/
 │   └── prometheus.yml
